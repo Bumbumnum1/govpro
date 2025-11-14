@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Lexend } from "next/font/google";
 import "./globals.css";
+import { Poppins } from "next/font/google";
+
 import { Toaster } from "@/app/components/ui/sonner";
 
-
-const lexend = Lexend({
-  variable: "--font-lexend",
+const poppins = Poppins({
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
 });
 
 export const metadata: Metadata = {
@@ -21,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${lexend.variable} antialiased`}>
+      <body className={`${poppins.variable} antialiased`}>
         {children}
         <Toaster richColors theme="light" position="top-right" />
       </body>
