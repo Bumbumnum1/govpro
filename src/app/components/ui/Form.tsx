@@ -320,9 +320,9 @@ export default function FirstForm({ dialog, handleModal }: FirstFormType) {
                       </label>
 
                       <div className="w-full flex flex-wrap gap-2">
-                        {fileName.map((item) => (
+                        {fileName.map((item,index) => (
                           <div
-                            key={item.name}
+                            key={index}
                             className="flex items-center gap-2 bg-[#eeeeee] text-gray-600 px-3 py-2 rounded-md text-sm"
                           >
                             <span>{item.name}</span>
