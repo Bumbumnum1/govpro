@@ -4,7 +4,6 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogOverlay,
   DialogTitle,
 } from "./shadcn-io/dialog";
 import { useEffect, useRef, useState } from "react";
