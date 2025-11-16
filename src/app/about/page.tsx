@@ -3,13 +3,10 @@ import Image from "next/image";
 
 import Header from "../components/ui/Header";
 
-
 export default function About() {
-
   return (
     <div className="w-full h-screen flex flex-col text-text-color  overflow-y-auto text-sm bg-white ">
-      <Header></Header>
-
+      <Header />
       <div className="flex flex-row items-start justify-between flex-1  pl-5 pr-5">
         <div className="mt-28 pl-7 flex flex-1 ">
           <div className="flex flex-col gap-6 ">
@@ -33,7 +30,6 @@ export default function About() {
           />
         </div>
       </div>
-
     </div>
   );
 }

@@ -1,18 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
 
-
-export default function Header(){
+export default function Header() {
   return (
     <>
-    <div className="flex items-center justify-between mb-5 p-5  ">
+      <div className="flex items-center justify-between mb-5 p-5  ">
         <div className="text-xl font-medium  flex flex-row gap-25 items-center">
-          <Link href='/' >
+          <Link href="/">
             <Image src="/logo.svg" alt="logo" width={190} height={65} />
           </Link>
           <div className="flex flex-row gap-20">
             <div>
-              <label className="cursor-pointer ">Report</label>
+              <Link href="/" className="cursor-pointer hover:font-semibold">
+                Report
+              </Link>
             </div>
 
             <div>
@@ -27,5 +28,5 @@ export default function Header(){
         </div>
       </div>
     </>
-  )
+  );
 }
