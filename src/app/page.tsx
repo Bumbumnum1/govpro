@@ -30,7 +30,6 @@ export default function Home() {
               onClose={() => setOpenDialog(false)}
               message="Successfully Reported!"
             />
-            ;
             <p className="text-3xl leading-relaxed">
               A Secure Platform
               <br />
