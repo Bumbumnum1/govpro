@@ -11,6 +11,7 @@ import Combobox, { OptionType } from "./Combobox";
 import { toast } from "sonner";
 import Image from "next/image";
 import { SuccessDialog } from "./SuccessDialog";
+import { submitReport } from "@/app/api/report.service";
 
 interface FirstFormType {
   dialog: boolean;
@@ -122,23 +123,30 @@ export default function FirstForm({ dialog, handleModal }: FirstFormType) {
     setCurrentTab("reporter");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isAnonymous && !validateReporterInfo()) return;
 
-    console.log({
-      issue,
-      selected,
-      selectedIssue,
-      link,
-      files: fileName,
-      reporterName: isAnonymous ? "Anonymous" : reporterName,
-      reporterEmail: isAnonymous ? "Anonymous" : reporterEmail,
-    });
+    const payload = {
+      is_anonymous: isAnonymous,
+      name: isAnonymous ? null : reporterName,
+      email: isAnonymous ? null : reporterEmail,
+      issue_type: selectedIssue[0]?.id ?? "",
+      urgency: selected,
+      url: link,
+      description: issue,
+    };
 
-    handleModal();
-    setOpenDialog(true);
+    try {
+      await submitReport(payload);
+
+      handleModal();
+      setOpenDialog(true);
+    } catch (err) {
+      toast.error("Failed to send report.");
+      console.error(err);
+    }
   };
 
   const isReportComplete =
@@ -239,7 +247,7 @@ export default function FirstForm({ dialog, handleModal }: FirstFormType) {
                 </div>
 
                 <div className="w-full">
-                  <p className="font-light pb-3">Risk Level</p>
+                  <p className="font-light pb-3">Urgency Level</p>
                   <div className="flex flex-row gap-6 text-[14px] text-[#3E3E3E] mb-3 items-center justify-center">
                     {["low", "medium", "high", "critical"].map((level) => {
                       const accentColor =
@@ -257,7 +265,7 @@ export default function FirstForm({ dialog, handleModal }: FirstFormType) {
                         >
                           <input
                             type="radio"
-                            name="risk"
+                            name="urgency"
                             value={level}
                             checked={selected === level}
                             onChange={(e) => handleRadioSelect(e.target.value)}
