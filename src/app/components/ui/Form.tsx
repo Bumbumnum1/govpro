@@ -1,5 +1,4 @@
-import { X } from "lucide-react";
-import { Input } from "./input";
+
 import {
   Dialog,
   DialogContent,
@@ -7,413 +6,256 @@ import {
   DialogTitle,
 } from "./shadcn-io/dialog";
 import { useEffect, useRef, useState } from "react";
-import Combobox, { OptionType } from "./Combobox";
-import { toast } from "sonner";
-import Image from "next/image";
-import { SuccessDialog } from "./SuccessDialog";
 
+
+import { SuccessDialog } from "./SuccessDialog";
+import { useForm, Control } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import FormSchema, { FormType } from "@/types/formScema.zod";
+import { ProgressBarType } from "@/types/Components.type";
+import FormComponent from "../Form/FormComponent";
+import ReCAPTCHA from "react-google-recaptcha";
+import Button from "../Button";
 interface FirstFormType {
   dialog: boolean;
   handleModal: () => void;
 }
 
 export default function FirstForm({ dialog, handleModal }: FirstFormType) {
-  const defaultIssues: OptionType[] = [
-    { id: "phishing", label: "Phishing" },
-    { id: "malware", label: "Malware" },
-    { id: "access_issue", label: "Access Issue" },
-    { id: "slow_system", label: "Slow System" },
-    { id: "password_reset", label: "Password Reset" },
-  ];
+  const { control, handleSubmit , reset,trigger,formState:{errors}} = useForm<FormType>({
+    resolver: zodResolver(FormSchema),
+    mode:'onChange',
+    defaultValues: {
+      issue: "",
+      ristLevel: "Low",
+      issueType: [],
+      link: "",
+      reporterDetails: {
+        email:'',
+        name:''
+      },
 
+    },
+  });
+  
+  const captChaRef= useRef(null)
+
+
+  const [captChaValue,setCaptChaValue]=useState()
+
+  const handleDeleteFile = () => {
+    return reset({ imageOrFile: undefined });
+  };
+
+ const handleCaptchaChange=()=>{
+
+ }
   const [currentTab, setCurrentTab] = useState<"report" | "reporter">("report");
 
-  const [openIssue, setOpenIssue] = useState<boolean>(false);
 
-  const [isAnonymous, setIsAnonymous] = useState(false);
+
+  
 
   const [openDialog, setOpenDialog] = useState<boolean>(false);
 
-  // Form states
-  const [issue, setIssue] = useState("");
-  const [selected, setSelected] = useState("low");
-  const [selectedIssue, setSelectedIssue] = useState<OptionType[]>([]);
-  const [link, setLink] = useState("");
-  const [fileName, setFileName] = useState<File[]>([]);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Reporter info
-  const [reporterName, setReporterName] = useState("");
-  const [reporterEmail, setReporterEmail] = useState("");
 
-  const handleRadioSelect = (value: string) => setSelected(value);
 
-  const handleSelect = (value: string, issueEncountered: OptionType[]) => {
-    const found = issueEncountered.find((i) => i.id === value);
-    if (!found) return;
+  const handleNext = async () => {
+  const valid=  await trigger([
+      'issueType',
+      'link',
+      'imageOrFile', 
+      'ristLevel',
+      'issue'
+    ])
+  if(!valid){
+    console.log('Validation failed');
 
-    setSelectedIssue((prev) =>
-      prev.some((item) => item.id === value)
-        ? prev.filter((item) => item.id !== value)
-        : [...prev, found]
-    );
+    console.log('====================================');
+    console.log(errors);
+    console.log('====================================');
+    return
+  }
+    if(!valid)return
+    setCurrentTab('reporter');
+    //  toast.success("Report information validated!");
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length) return;
+  console.log('====================================');
+  console.log(currentTab);
+  console.log('====================================');
+  const onSubmit = () => {
 
-    const selectedFiles = Array.from(e.target.files);
-    const allowedTypes = [
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "image/png",
-      "image/jpeg",
-      "image/jpg",
-    ];
-    const filteredFiles = selectedFiles.filter((file) =>
-      allowedTypes.includes(file.type)
-    );
-    if (filteredFiles.length === 0) {
-      toast.warning("Only PDF, DOC, DOCX, PNG, and JPEG files are allowed.");
-      return;
-    }
-    setFileName((prev) => [...prev, ...filteredFiles]);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
 
-  const handleRemoveFile = (val: string) =>
-    setFileName((prev) => prev.filter((file) => file.name !== val));
-
-  const validateReportInfo = () => {
-    if (!issue.trim()) {
-      toast.error("Issue field is required.");
-      return false;
-    }
-    if (!selected) {
-      toast.error("Risk level is required.");
-      return false;
-    }
-    if (selectedIssue.length === 0) {
-      toast.warning("Please select at least one issue type.");
-      return false;
-    }
-    if (!link.trim()) {
-      toast.error("URL is required.");
-      return false;
-    }
-    return true;
-  };
-
-  const validateReporterInfo = () => {
-    if (!reporterName.trim()) {
-      toast.error("Reporter name is required.");
-      return false;
-    }
-    if (!reporterEmail.trim()) {
-      toast.error("Reporter email is required.");
-      return false;
-    }
-    return true;
-  };
-
-  const handleNext = () => {
-    if (!validateReportInfo()) return;
-    setCurrentTab("reporter");
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!isAnonymous && !validateReporterInfo()) return;
-
-    console.log({
-      issue,
-      selected,
-      selectedIssue,
-      link,
-      files: fileName,
-      reporterName: isAnonymous ? "Anonymous" : reporterName,
-      reporterEmail: isAnonymous ? "Anonymous" : reporterEmail,
-    });
+   
 
     handleModal();
     setOpenDialog(true);
   };
 
-  const isReportComplete =
-    issue &&
-    selected &&
-    selectedIssue.length > 0 &&
-    (link || fileName.length > 0);
-
+ 
   useEffect(() => {
     if (!openDialog) return;
     const timer = setTimeout(() => setOpenDialog(false), 3000);
     return () => clearTimeout(timer);
   }, [openDialog]);
 
-  useEffect(() => {
-    if (dialog) {
-      setTimeout(() => {
-        setCurrentTab("report");
-        setIssue("");
-        setSelected("low");
-        setSelectedIssue([]);
-        setLink("");
-        setFileName([]);
-        setReporterName("");
-        setReporterEmail("");
-        setIsAnonymous(false);
-      }, 0);
-    }
-  }, [dialog]);
+  // useEffect(() => {
+  //   if (dialog) {
+  //     setTimeout(() => {
+  //       setCurrentTab("report");
+  //       setIssue("");
+  //       setSelected("low");
+  //       setSelectedIssue([]);
+  //       setLink("");
+  //       setFileName([]);
+  //       setReporterName("");
+  //       setReporterEmail("");
+  //       setIsAnonymous(false);
+  //     }, 0);
+  //   }
+  // }, [dialog]);
 
+  
+
+
+  
   return (
     <>
       <Dialog open={dialog} onOpenChange={handleModal} modal>
         {dialog && <div className="fixed inset-0 bg-black/50 z-0" />}
 
         <DialogContent
-          className="p-0 cursor-default bg-white flex flex-col gap-5 w-[600px] h-[700px]"
+          className="p-5 cursor-default bg-primary flex flex-col gap-5  min-w-3xl border "
           showCloseButton={false}
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DialogHeader>
             <DialogTitle>
-              <div className="flex border-b">
-                {/* REPORT TAB */}
-                <button
-                  className={`flex-1 py-2 text-center font-light flex items-center justify-center gap-2 ${
-                    currentTab === "report"
-                      ? "border-b-2 border-status-orange-color text-text-color"
-                      : isReportComplete
-                      ? "text-text-color border-b-2 border-status-orange-color"
-                      : "text-text-color"
-                  }`}
-                >
-                  <span
-                    className={`w-3 h-3 rounded-full ${
-                      isReportComplete || currentTab === "report"
-                        ? "bg-status-orange-color"
-                        : "bg-text-color"
-                    }`}
-                  />
-                  Report Information
-                </button>
-
-                {/* REPORTER TAB */}
-                <button
-                  className={`flex-1 py-2 text-center font-light flex items-center justify-center gap-2 ${
-                    currentTab === "reporter"
-                      ? "border-b-2 border-status-orange-color text-text-color"
-                      : "text-text-color"
-                  }`}
-                >
-                  <span
-                    className={`w-3 h-3 rounded-full ${
-                      currentTab === "reporter"
-                        ? "bg-status-orange-color"
-                        : "bg-gray-300"
-                    }`}
-                  />
-                  Reporter’s Information
-                </button>
+              <div className="flex flex-col flex-1">
+                {/*progress bar*/}
+                <ProgressBar currentTab={currentTab}></ProgressBar>
+                <div className="flex items-center  justify-between flex-row flex-1">
+                  <p className="p-5  text-text-color font-normal">
+                    Report Information
+                  </p>
+                  <p className="p-5  text-text-color font-normal">
+                    Your Information
+                  </p>
+                </div>
               </div>
             </DialogTitle>
           </DialogHeader>
 
           {/* REPORT INFORMATION */}
           {currentTab === "report" ? (
-            <form onSubmit={(e) => e.preventDefault()}>
-              <div className="flex flex-col items-start gap-5 font-poppins text-[#3e3e3e] text-sm">
-                <div className="w-full">
-                  <p className="font-light">What is the issue?</p>
-                  <Input
-                    type="text"
-                    value={issue}
-                    placeholder="May we know the issue?"
-                    onChange={(e) => setIssue(e.target.value)}
-                  />
-                </div>
+            <div>
+              <FormComponent
+                control={control}
+                name="issueType"
+                displayName="Issue Type"
+                placeHolder="Select..."
+                isComboBoxForm
+                comboBoxOption={["Phishing", "Malware", "Access Issue"]}
+              />
+              <FormComponent
+                control={control}
+                name={"ristLevel"}
+                displayName="Urgency Level "
+                placeHolder="May i know The Issue?"
+                isFormRadio
+                radioForm={[
+                  { value: "Low" },
+                  { value: "Medium" },
+                  { value: "High" },
+                  
+                ]}
+              ></FormComponent>
 
-                <div className="w-full">
-                  <p className="font-light pb-3">Risk Level</p>
-                  <div className="flex flex-row gap-6 text-[14px] text-[#3E3E3E] mb-3 items-center justify-center">
-                    {["low", "medium", "high", "critical"].map((level) => {
-                      const accentColor =
-                        level === "low"
-                          ? "var(--color-status-green-color)"
-                          : level === "medium"
-                          ? "var(--color-status-blue-color)"
-                          : level === "high"
-                          ? "var(--color-status-orange-color)"
-                          : "var(--color-status-red-color)";
-                      return (
-                        <label
-                          key={level}
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <input
-                            type="radio"
-                            name="risk"
-                            value={level}
-                            checked={selected === level}
-                            onChange={(e) => handleRadioSelect(e.target.value)}
-                            style={{ accentColor }}
-                          />
-                          {level.charAt(0).toUpperCase() + level.slice(1)}
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
+              <FormComponent
+                control={control}
+                name={"issue"}
+                displayName="Whats the Issue"
+                placeHolder="May i know The Issue?"
+                isFormTextArea
+              ></FormComponent>
 
-                <div className="w-full">
-                  <p className="font-light">What type of issue?</p>
-                  <div className="flex items-center gap-3 w-full">
-                    <Combobox
-                      open={openIssue}
-                      setOpen={setOpenIssue}
-                      selected={selectedIssue}
-                      data={defaultIssues}
-                      handleSelect={(val) => handleSelect(val, defaultIssues)}
-                      type="issue"
-                    />
-                  </div>
-                </div>
+              <FormComponent
+                control={control}
+                name={"link"}
+                displayName="Whats the Link?"
+                placeHolder="May I know the website URL email"
+              ></FormComponent>
 
-                <div className="w-full">
-                  <p className="font-light">What is the link?</p>
-                  <Input
-                    type="text"
-                    value={link}
-                    placeholder="Enter the site url"
-                    onChange={(e) => setLink(e.target.value)}
-                  />
-                </div>
+              <FormComponent
+                control={control}
+                name={"imageOrFile"}
+                displayName="Attach Screenshot or File"
+                placeHolder="May I know the website URL"
+                isFormFile
+                handleDeleteFile={handleDeleteFile}
+              ></FormComponent>
+              
 
-                <div className="w-full">
-                  <p className="font-light">Attach screenshots or files</p>
-                  <div className="flex flex-row items-center w-full">
-                    <div className="w-full flex flex-col items-start gap-2 overflow-y-auto max-h-[150px]">
-                      <input
-                        type="file"
-                        id="uploadAttachment"
-                        className="hidden"
-                        multiple
-                        onChange={handleFileChange}
-                        ref={fileInputRef}
-                      />
-
-                      <label
-                        htmlFor="uploadAttachment"
-                        className="flex items-center justify-center w-full h-[500px] cursor-pointer px-3 py-2 rounded-lg border border-dashed border-gray-400 text-gray-600 hover:border-black duration-200"
-                      >
-                        <Image
-                          src="/uploadfile.png"
-                          alt="upload a file"
-                          width={60}
-                          height={60}
-                        />
-                      </label>
-
-                      <div className="w-full flex flex-wrap gap-2">
-                        {fileName.map((item,index) => (
-                          <div
-                            key={index}
-                            className="flex items-center gap-2 bg-[#eeeeee] text-gray-600 px-3 py-2 rounded-md text-sm"
-                          >
-                            <span>{item.name}</span>
-                            <X
-                              className="w-4 h-4 cursor-pointer hover:text-red-500 transition"
-                              onClick={() => handleRemoveFile(item.name)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="flex flex-1 items-center justify-center pt-5">
+                <Button
+                className="px-12 py-2  text-primary rounded-xl cursor-pointer bg-button-color"
+                name="Next"
+                onClick={handleNext}
+              />
               </div>
-
-              <div className="flex justify-center mt-5 flex-row gap-3">
-                {" "}
-                <button
-                  type="button"
-                  onClick={handleModal}
-                  className="w-[150px] h-10 font-poppins text-sm px-3 py-2 rounded-lg bg-gray-400 border text-white cursor-pointer"
-                >
-                  Back
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  className="px-4 py-2 w-[150px] h-10 rounded-lg bg-blue-500 text-white hover:bg-blue-600 text-sm cursor-pointer"
-                >
-                  Next
-                </button>
-              </div>
-            </form>
+            </div>
           ) : (
             <>
-              <form onSubmit={handleSubmit}>
-                <div className="flex flex-col items-start gap-5 font-poppins text-[#3e3e3e] text-sm">
-                  <label className="flex items-center gap-2 mt-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isAnonymous}
-                      onChange={(e) => setIsAnonymous(e.target.checked)}
-                      className="cursor-pointer"
-                    />
-                    Submit anonymously
-                  </label>
+             <div className="flex flex-col flex-1 ">
+            <FormComponent
+            control={control}
+            name={'reporterDetails.name'}
+            displayName="Whats Your name?"
+            placeHolder="May i know your name?"
+            optional
+            ></FormComponent>
 
-                  <div className="w-full">
-                    <p className="font-medium">Reporter Name</p>
-                    <Input
-                      type="text"
-                      disabled={isAnonymous}
-                      value={reporterName}
-                      placeholder="Enter your name"
-                      onChange={(e) => setReporterName(e.target.value)}
-                    />
-                  </div>
+            <FormComponent
+            control={control}
+            name={'reporterDetails.email'}
+            displayName="Whats Your Email?"
+            placeHolder="May i know your Email?"
+            optional
+            ></FormComponent>
 
-                  <div className="w-full">
-                    <p className="font-medium">Reporter Email</p>
-                    <Input
-                      type="email"
-                      disabled={isAnonymous}
-                      value={reporterEmail}
-                      placeholder="Enter your email"
-                      onChange={(e) => setReporterEmail(e.target.value)}
-                    />
-                  </div>
 
-                  <div>{/* captcha here */}</div>
-                  <div className="w-full h-[264px]">
-                    {/* hard coded la ini nga height para la maging maupay it a tab HAHAHA */}
-                  </div>
-                </div>
-                <div className="flex justify-center mt-5 flex-row gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentTab("report")}
-                    className="w-[150px] h-10 font-poppins text-sm px-3 py-2 rounded-lg bg-gray-400 border text-white cursor-pointer"
-                  >
-                    Back
-                  </button>
 
-                  <button
-                    type="submit"
-                    className="px-4 py-2 w-[150px] h-10 rounded-lg bg-blue-500 text-white hover:bg-blue-600 text-sm cursor-pointer"
-                  >
-                    Submit
-                  </button>
-                </div>
-              </form>
+            <div className="  flex justify-center items-center pt-10 flex-col flex-1">
+              <ReCAPTCHA
+              ref={captChaRef}
+              sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? ""}
+              onChange={handleCaptchaChange}
+              ></ReCAPTCHA>
+
+
+
+
+              <div className="pt-16 flex justify-between   ">
+            <Button
+              className=" border border-gray-text text-text-color px-16 py-2 rounded-2xl mr-10 "
+            name="Back"
+            onClick={()=> setCurrentTab('report')}
+            >
+
+            </Button>
+            
+            <Button
+            onClick={onSubmit}
+            className="bg-button-color px-16 py-2 rounded-2xl"
+            name="Submit"
+            ></Button>
+              </div>
+            </div>
+
+             </div>
             </>
           )}
         </DialogContent>
@@ -425,5 +267,36 @@ export default function FirstForm({ dialog, handleModal }: FirstFormType) {
         message="Reported Successfully!"
       />
     </>
+  );
+}
+
+function ProgressBar({ currentTab }: ProgressBarType) {
+  return (
+    <div className=" flex flex-row justify-between flex-1 ">
+      <div className="flex flex-row items-center flex-1">
+        <div className="w-8 rounded-full bg-status-orange-color p-4"></div>
+        <div
+          className={`flex h-2 flex-1 transition-all ease-in-out bg-status-orange-color delay-700 `}
+        ></div>
+      </div>
+      <div className="flex flex-row items-center flex-1">
+        <div
+          className={`w-8 rounded-full bg-secondary ${
+            currentTab === "reporter" && "bg-status-orange-color"
+          } p-4`}
+        ></div>
+        <div
+          className={`flex h-2 bg-secondary flex-1  ${
+            currentTab === "reporter" &&
+            " bg-status-orange-color transition-all delay-700"
+          }`}
+        ></div>
+      </div>
+      <div
+        className={`w-8 rounded-full bg-secondary ${
+          currentTab === "reporter" && "bg-status-orange-color transition-all delay-700"
+        } p-4`}
+      ></div>
+    </div>
   );
 }

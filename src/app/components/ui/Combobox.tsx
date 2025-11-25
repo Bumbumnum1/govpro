@@ -12,8 +12,8 @@ import {
   CommandItem,
   CommandList,
 } from "./shadcn-io/command";
-export type OptionType = { id: string; label: string };
-export default function Combobox({
+export type OptionType =string;
+export default function  Combobox({
   open,
   setOpen,
   selected,
@@ -39,15 +39,15 @@ export default function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="flex justify-between items-start text-[#3e3e3e] font-poppins w-full h-full cursor-pointer"
+          className="flex justify-between items-start text-text-color font-poppins flex-1 cursor-pointer "
           onClick={() => setOpen((prev) => !prev)}
         >
           {type === "issue" ? (
             Array.isArray(selected) && selected.length > 0 ? (
               <p>
-                {selected[0].label.length > 25
-                  ? selected[0].label.slice(0, 25) + "..."
-                  : selected[0].label}
+                {selected[0].length > 25
+                  ? selected[0].slice(0, 25) + "..."
+                  : selected[0]}
                 {selected.length > 1 && ` +${selected.length - 1} more`}
               </p>
             ) : (
@@ -55,9 +55,9 @@ export default function Combobox({
             )
           ) : selected && !Array.isArray(selected) ? (
             <p>
-              {selected.label.length > 36
-                ? selected.label.slice(0, 36) + "..."
-                : selected.label}
+              {selected.length > 36
+                ? selected.slice(0, 36) + "..."
+                : selected}
             </p>
           ) : (
             `Select ${type}`
@@ -68,19 +68,19 @@ export default function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-[-(--radix-popover-trigger-width)] m-0 p-0 bg-white rounded-md shadow-lg">
         <Command>
-          <CommandInput placeholder={`Search ${type}...`} className="h-9 text-[#3e3e3e]" />
+          <CommandInput placeholder={`Search ${type}...`} className="h-9 text-text-color" />
           <CommandList>
             <CommandEmpty>No {type} found.</CommandEmpty>
             <CommandGroup>
               {data.map((item, index) => {
                 return (
                   <CommandItem
-                    className="text-[#3e3e3e] font-poppins cursor-pointer"
+                    className="text-text-color font-poppins cursor-pointer"
                     key={index}
-                    value={item.label}
-                    onSelect={() => handleSelect(item.id)}
+                    value={item}
+                    onSelect={() => handleSelect(item)}
                   >
-                    {item.label}
+                    {item}
 
                     <Check
                       className={cn(
@@ -88,10 +88,10 @@ export default function Combobox({
 
                         type === "issue"
                           ? Array.isArray(selected) &&
-                            selected.some((emp) => emp.id === item.id)
+                            selected.some((emp) => emp === item)
                             ? "opacity-100"
                             : "opacity-0"
-                          : selected && (selected as OptionType).id === item.id
+                          : selected && selected === item
                           ? "opacity-100"
                           : "opacity-0"
                       )}
